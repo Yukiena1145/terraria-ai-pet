@@ -1,0 +1,44 @@
+{
+  "name": "cortico-world-terraria",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Coopanion World：把主人本机的泰拉瑞亚 AI Agent 变成桌宠自己的工具，让桌宠用她/他自己的大模型直接看地图、走路、砍树、挖矿、放方块、造房子、打怪。",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cortico-world",
+    "cortico",
+    "terraria",
+    "game"
+  ],
+  "cortico": {
+    "kind": "world",
+    "api": 6,
+    "displayName": "泰拉瑞亚",
+    "webUiClient": "./dist/webui.js",
+    "webUiStyle": "./dist/webui.css",
+    "tags": [
+      "game",
+      "terraria",
+      "local",
+      "requires-extension"
+    ],
+    "locales": {
+      "zh": {
+        "displayName": "泰拉瑞亚",
+        "description": "让桌宠直接操控主人的官方 Terraria 1.4.4：看坐标/血量/背包/31×31 地图，走路、跳、砍树、挖矿、放方块、合成、造房子、打怪。需要本机先运行 Terraria-Agent 的本地服务（插件可自动拉起）。"
+      },
+      "en": {
+        "displayName": "Terraria",
+        "description": "Lets the pet play the owner's official Terraria 1.4.4 through the local Terraria-Agent service: read position, HP, inventory and the 31x31 tile map; walk, jump, chop trees, mine, place blocks, craft, build a house shell and fight."
+      }
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

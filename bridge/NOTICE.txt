@@ -1,0 +1,7 @@
+Microsoft.Diagnostics.Runtime (ClrMD)
+Copyright (c) Microsoft Corporation
+Licensed under the MIT License.
+https://github.com/microsoft/clrmd
+
+The ClrMD managed assembly is bundled under bridge/ so the 32-bit probe can
+attach to the 32-bit Terraria .NET Framework process. Source: bridge/probe.cs.

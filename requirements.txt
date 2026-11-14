@@ -1,0 +1,18 @@
+# Terraria-Agent-V1 runtime dependencies
+Flask>=3.0,<4.0
+waitress>=3.0.0
+requests>=2.31.0
+numpy>=1.24.0
+mss>=9.0.1
+pygetwindow>=0.0.9
+psutil>=5.9.0
+
+# Chinese chat input: clipboard + Ctrl+V in Terraria
+pyperclip>=1.8.2
+
+# Windows-only input / game integration
+pydirectinput>=1.0.4; platform_system == "Windows"
+pywin32>=306; platform_system == "Windows"
+
+# Reserved for V2 screenshot/vision pipeline
+opencv-python>=4.8.0.74

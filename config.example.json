@@ -1,0 +1,87 @@
+{
+  "deepseek_api_key": "",
+  "deepseek_base_url": "https://api.deepseek.com",
+  "deepseek_model": "deepseek-chat",
+  "window_title": "泰拉瑞亚",
+  "move_speed": 1.0,
+  "grid_radius": 15,
+  "simulation_mode": false,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "open_browser": true
+  },
+  "agent": {
+    "max_log_lines": 300,
+    "chop_clicks": 3
+  },
+  "commentary": {
+    "enabled": true,
+    "cooldown_s": 5.0,
+    "low_hp_ratio": 0.3
+  },
+  "game": {
+    "exe_path": "E:\\SteamLibrary\\steamapps\\common\\Terraria\\Terraria.exe",
+    "window_titles": [
+      "Terraria"
+    ],
+    "capture_fps": 12,
+    "tile_px": 16,
+    "screen_scale": 1.0,
+    "player_offset": [
+      0.5,
+      0.5
+    ],
+    "max_hp": 100,
+    "hotbar": [
+      {
+        "slot": 1,
+        "name": "Copper Axe",
+        "kind": "axe",
+        "power": 5,
+        "damage": 3
+      },
+      {
+        "slot": 2,
+        "name": "Copper Pickaxe",
+        "kind": "pickaxe",
+        "power": 35,
+        "damage": 4
+      },
+      {
+        "slot": 3,
+        "name": "Iron Pickaxe",
+        "kind": "pickaxe",
+        "power": 40,
+        "damage": 5
+      },
+      {
+        "slot": 4,
+        "name": "Wooden Sword",
+        "kind": "weapon",
+        "damage": 7
+      },
+      {
+        "slot": 5,
+        "name": "Iron Broadsword",
+        "kind": "weapon",
+        "damage": 12
+      },
+      {
+        "slot": 6,
+        "name": "Hammer",
+        "kind": "hammer",
+        "power": 30,
+        "damage": 2
+      }
+    ]
+  },
+  "input_backend": "keyboard",
+  "memory": {
+    "enabled": true,
+    "bridge_path": "",
+    "interval_ms": 50,
+    "tiles_enabled": true
+  },
+  "terrain_source": "memory"
+}

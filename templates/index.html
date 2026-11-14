@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terraria Agent V1 · 控制面板</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">T</div>
+        <div>
+          <h1>Terraria Agent <span class="version">V1</span></h1>
+          <p>31×31 实时地形 · 闭环执行 · 本地关键词优先</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="connState" class="pill offline"><i></i> 连接中</span>
+        <span id="modeBadge" class="pill subtle">真实模式</span>
+        <span id="standbyBadge" class="pill subtle">待命 · 等待首条指令</span>
+        <button id="openGuideBtn" class="btn ghost" type="button">新手必看</button>
+        <button id="openSettings" class="btn ghost" type="button">⚙ 设置</button>
+      </div>
+    </header>
+
+    <section id="guidePanel" class="panel guide-panel">
+      <div class="guide-head">
+        <div>
+          <span class="guide-kicker">START HERE · 首次使用</span>
+          <h2>新手必看指南</h2>
+          <p>先完成下面 3 步，再在下方聊天框输入「去砍树」开始接管。</p>
+        </div>
+        <div class="guide-status">
+          <span id="gameStateBadge" class="pill subtle">检测游戏窗口…</span>
+          <button id="launchGameBtn" class="btn tiny primary" type="button">启动游戏</button>
+          <button id="closeGuideBtn" class="icon-btn" type="button" aria-label="收起指南">✕</button>
+        </div>
+      </div>
+
+      <div class="guide-grid">
+        <article class="guide-card">
+          <div class="guide-num">01</div>
+          <h3>官方版 + 新角色</h3>
+          <p>
+            现在只使用官方 Terraria：
+            <code>E:\SteamLibrary\steamapps\common\Terraria\Terraria.exe</code>。
+            AI 使用自己的新角色，不复制、不覆盖你的存档。
+          </p>
+          <p class="guide-note">
+            进入世界后，先让角色站在安全地面，再输入第一条指令。
+          </p>
+        </article>
+
+        <article class="guide-card">
+          <div class="guide-num">02</div>
+          <h3>窗口化 + 保持前台</h3>
+          <p>
+            进入游戏后按 <kbd>Alt</kbd> + <kbd>Enter</kbd> 退出全屏，推荐
+            <strong>800×600</strong> 或 <strong>1280×720</strong>。
+            点击一次 Terraria，让游戏保持前台；Agent 用 <code>pydirectinput</code>
+            发送键鼠。
+          </p>
+          <p class="guide-note">
+            不要开着箱子/物品栏/设置界面，否则 A/D 不会走路，看起来像卡死。
+          </p>
+        </article>
+
+        <article class="guide-card">
+          <div class="guide-num">03</div>
+          <h3>Defender 白名单</h3>
+          <p>
+            Windows 安全中心 → 病毒和威胁防护 → 管理设置 → 排除项 → 添加文件夹：
+          </p>
+          <ul class="guide-list">
+            <li><code>E:\SteamLibrary\steamapps\common\Terraria</code></li>
+            <li><code>F:\Terraria-Agent\Terraria-Agent-V1</code></li>
+          </ul>
+          <p class="guide-note">
+            本项目不修改游戏文件、不绕过反作弊；白名单仅避免键鼠模拟被误拦截。
+          </p>
+        </article>
+      </div>
+
+      <div class="guide-foot">
+        <div>
+          <strong id="guideGameTitle">等待 Terraria 窗口…</strong>
+          <p id="guideGameError">启动游戏并进入世界后，输入首条指令即可开始。</p>
+        </div>
+        <div class="guide-preview">
+          <img id="gamePreview" alt="Terraria 实时截图" />
+          <span>截图预览（可选）</span>
+        </div>
+        <div class="guide-ready">
+          <span>当前状态</span>
+          <strong id="standbyText">待命</strong>
+        </div>
+      </div>
+    </section>
+
+    <main class="layout">
+      <section class="panel map-panel">
+        <div class="panel-head">
+          <div>
+            <h2>实时地形</h2>
+            <p id="gridMeta">31 × 31 · 以玩家为中心</p>
+          </div>
+          <div id="busyBadge" class="busy-badge">待命</div>
+        </div>
+
+        <div class="canvas-shell">
+          <canvas id="mapCanvas" aria-label="31x31 地形网格"></canvas>
+        </div>
+
+        <div class="legend" aria-label="地图图例">
+          <span><i class="swatch air"></i>空气</span>
+          <span><i class="swatch dirt"></i>泥土</span>
+          <span><i class="swatch tree"></i>树木</span>
+          <span><i class="swatch stone"></i>石块</span>
+          <span><i class="swatch meteor"></i>陨石</span>
+          <span><i class="swatch wood"></i>木材块</span>
+          <span><i class="swatch wall"></i>背景墙</span>
+          <span><i class="swatch plant"></i>植物</span>
+          <span><i class="swatch enemy"></i>敌人</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel status-card">
+          <div class="status-title">
+            <div class="avatar">AI</div>
+            <div>
+              <h3>玩家状态</h3>
+              <p id="playerTile">tile (0, 0)</p>
+            </div>
+          </div>
+
+          <div class="coords">
+            <div><span>X 坐标</span><strong id="statX">0.00</strong></div>
+            <div><span>Y 坐标</span><strong id="statY">0.00</strong></div>
+          </div>
+
+          <div class="hp-row">
+            <span>生命</span>
+            <strong id="hpText">100 / 100</strong>
+          </div>
+          <div class="hp-track"><div id="hpBar" class="hp-fill"></div></div>
+
+          <div class="stat-line">
+            <span>当前工具</span>
+            <strong id="toolName">Copper Axe</strong>
+          </div>
+          <div class="stat-line">
+            <span>快捷栏</span>
+            <strong id="toolSlot">[1]</strong>
+          </div>
+          <div class="stat-line action-line">
+            <span>当前动作</span>
+            <strong id="actionText">Idle</strong>
+          </div>
+
+          <div class="reply-bubble">
+            <span>她的最新想法</span>
+            <p id="lastReply">还在等主人的第一条指令。</p>
+          </div>
+        </section>
+
+        <section class="panel quick-card">
+          <div class="panel-head compact">
+            <div>
+              <h2>快速指令</h2>
+              <p>点击即下发，无需输入</p>
+            </div>
+          </div>
+          <div class="quick-grid">
+            <button class="quick" data-command="去砍树" type="button">
+              <span class="quick-icon">🪓</span><span>去砍树</span>
+            </button>
+            <button class="quick" data-command="向左走 3 格" type="button">
+              <span class="quick-icon">←</span><span>向左走</span>
+            </button>
+            <button class="quick" data-command="向右走 3 格" type="button">
+              <span class="quick-icon">→</span><span>向右走</span>
+            </button>
+            <button class="quick" data-command="跳跃" type="button">
+              <span class="quick-icon">↑</span><span>跳跃</span>
+            </button>
+            <button class="quick" data-command="制作工作台" type="button">
+              <span class="quick-icon">🛠</span><span>制作工作台</span>
+            </button>
+            <button class="quick" data-command="放置工作台" type="button">
+              <span class="quick-icon">🧰</span><span>放置工作台</span>
+            </button>
+            <button class="quick" data-command="准备家具" type="button">
+              <span class="quick-icon">🪑</span><span>准备家具</span>
+            </button>
+            <button class="quick" data-command="打怪" type="button">
+              <span class="quick-icon">⚔</span><span>打怪</span>
+            </button>
+            <button class="quick" data-command="AI规划 去右边找空地造房子" type="button">
+              <span class="quick-icon">🤖</span><span>AI规划造房</span>
+            </button>
+            <button class="quick" data-command="建造房子" type="button">
+              <span class="quick-icon">🏗</span><span>建造房子</span>
+            </button>
+            <button class="quick" data-command="准备房子" type="button">
+              <span class="quick-icon">🏠</span><span>准备房子</span>
+            </button>
+            <button class="quick" data-command="建造" type="button">
+              <span class="quick-icon">🧱</span><span>建造</span>
+            </button>
+          </div>
+          <form id="aiChatForm" class="ai-chat-bar">
+            <input id="aiChatInput" type="text" autocomplete="off" maxlength="300"
+                   placeholder="直接和大模型说话：去右边找空地造房 / 打最近的怪">
+            <button class="btn primary" type="submit">发给大模型</button>
+          </form>
+          <button id="stopBtn" class="btn danger full" type="button">■ 立即停止</button>
+        </section>
+      </aside>
+    </main>
+
+    <section class="panel console-panel">
+      <div class="panel-head compact">
+        <div>
+          <h2>Agent 控制台</h2>
+          <p>自然语言指令 · 实时思考与执行日志</p>
+        </div>
+        <div class="console-tools">
+          <span id="simulationHint" class="hint">假数据沙盒</span>
+          <button id="clearLogBtn" class="btn tiny ghost" type="button">清屏</button>
+        </div>
+      </div>
+
+      <div id="logList" class="log-list">
+        <div class="log-line system"><span class="log-time">--:--:--</span><span class="log-msg">正在连接 Agent…</span></div>
+      </div>
+
+      <form id="commandForm" class="command-bar">
+        <input id="commandInput" type="text" autocomplete="off" maxlength="200"
+               placeholder="例如：去砍树 / 制作工作台 / 放置工作台 / 准备房子">
+        <button class="btn primary" type="submit">发送 <kbd>Enter</kbd></button>
+      </form>
+    </section>
+  </div>
+
+  <!-- 设置抽屉 -->
+  <aside id="settingsDrawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <h2>面板设置</h2>
+        <p>保存后立即热重载，无需重启</p>
+      </div>
+      <button id="closeSettings" class="icon-btn" type="button" aria-label="关闭">✕</button>
+    </div>
+
+    <form id="configForm" class="config-form">
+      <label class="field">
+        <span>DeepSeek API Key</span>
+        <div class="key-wrap">
+          <input id="apiKey" type="password" autocomplete="new-password"
+                 placeholder="sk-...">
+          <button id="toggleKey" class="eye-btn" type="button" aria-label="显示/隐藏 API Key">👁</button>
+        </div>
+        <small id="keyHint" class="field-hint">尚未配置</small>
+      </label>
+
+      <label class="field">
+        <span>游戏窗口标题</span>
+        <input id="windowTitle" type="text" maxlength="120" placeholder="Terraria">
+        <small class="field-hint">真实模式用于聚焦窗口，默认 Terraria</small>
+      </label>
+
+      <label class="field">
+        <span>移动速度 <output id="moveSpeedValue">1.0×</output></span>
+        <input id="moveSpeed" type="range" min="0.2" max="3.0" step="0.1" value="1.0">
+        <small class="field-hint">V1 影响模拟移动速度，真实模式会传给执行层配置</small>
+      </label>
+
+      <label class="field">
+        <span>网格范围 <output id="gridRadiusValue">21 × 21</output></span>
+        <input id="gridRadius" type="range" min="5" max="15" step="1" value="10">
+        <small class="field-hint">半径 15 = 31×31；范围越大，前端格子越小</small>
+      </label>
+
+      <p id="configError" class="form-error" role="alert"></p>
+      <button id="saveConfigBtn" class="btn primary full" type="submit">保存配置</button>
+      <button id="clearKeyBtn" class="btn tiny danger-text" type="button">清除已保存的 API Key</button>
+    </form>
+  </aside>
+
+  <!-- 首次配置全屏遮罩 -->
+  <div id="configOverlay" class="overlay" aria-hidden="true">
+    <div class="onboarding">
+      <div class="onboarding-mark">T</div>
+      <p class="eyebrow">ONE-TIME SETUP</p>
+      <h2>先完成 1 分钟配置</h2>
+      <p class="onboarding-copy">
+        填写 DeepSeek API Key 后即可使用自然语言指令。
+        砍树、移动、跳跃、停止等本地关键词指令不消耗 Token。
+      </p>
+
+      <label class="field">
+        <span>DeepSeek API Key</span>
+        <div class="key-wrap">
+          <input id="onboardingKey" type="password" autocomplete="off" placeholder="sk-...">
+          <button id="toggleOnboardingKey" class="eye-btn" type="button" aria-label="显示/隐藏 API Key">👁</button>
+        </div>
+        <small id="onboardingError" class="field-hint error"></small>
+      </label>
+
+      <button id="onboardingSave" class="btn primary full" type="button">保存并开始</button>
+      <button id="localDemoBtn" class="btn ghost full" type="button">先体验本地指令（不调用大模型）</button>
+      <p class="privacy">Key 只写入本机 config.json，不会发送到除 DeepSeek 之外的服务。</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const canvas = $("mapCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const TILE_COLORS = {
+      ".": "#000000",
+      "D": "#7a4b2a",
+      "T": "#2f9e44",
+      "S": "#6b7280",
+      "M": "#8b5cf6",
+      "W": "#b45309",
+      "B": "#3f3f46",
+      "P": "#84cc16",
+      "E": "#ef4444"
+    };
+
+    let state = null;
+    let config = null;
+    let localDemo = false;
+    let guideDismissed = false;
+    let refreshing = false;
+    let lastLogKey = "";
+    let toastTimer = null;
+
+    // ------------------------------------------------------------------
+    // 通用 UI
+    // ------------------------------------------------------------------
+    function toast(message, type = "info") {
+      const el = $("toast");
+      el.textContent = message;
+      el.className = `toast show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = "toast"; }, 3200);
+    }
+
+    function setConnection(ok) {
+      const el = $("connState");
+      el.className = `pill ${ok ? "online" : "offline"}`;
+      el.innerHTML = `<i></i> ${ok ? "Agent 在线" : "连接断开"}`;
+    }
+
+    function showOverlay() {
+      $("configOverlay").classList.add("show");
+      $("configOverlay").setAttribute("aria-hidden", "false");
+      setTimeout(() => $("onboardingKey").focus(), 80);
+    }
+
+    function hideOverlay() {
+      $("configOverlay").classList.remove("show");
+      $("configOverlay").setAttribute("aria-hidden", "true");
+    }
+
+    function openDrawer() {
+      $("settingsDrawer").classList.add("open");
+      $("settingsDrawer").setAttribute("aria-hidden", "false");
+      loadConfig();
+    }
+
+    function closeDrawer() {
+      $("settingsDrawer").classList.remove("open");
+      $("settingsDrawer").setAttribute("aria-hidden", "true");
+    }
+
+    // ------------------------------------------------------------------
+    // Canvas 地图渲染
+    // ------------------------------------------------------------------
+    function resizeCanvas() {
+      const shell = canvas.parentElement;
+      const style = getComputedStyle(shell);
+      const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+      const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+      const availW = Math.max(0, shell.clientWidth - padX);
+      const availH = Math.max(0, shell.clientHeight - padY);
+      const size = Math.max(240, Math.floor(Math.min(availW, availH || availW)));
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      canvas.width = Math.floor(size * dpr);
+      canvas.height = Math.floor(size * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawMap();
+    }
+
+    function drawMap() {
+      const size = canvas.clientWidth;
+      if (!size) return;
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = "#05080d";
+      ctx.fillRect(0, 0, size, size);
+
+      if (!state || !Array.isArray(state.grid) || state.grid.length === 0) {
+        drawEmptyMap(size);
+        return;
+      }
+
+      const grid = state.grid;
+      const n = grid.length;
+      const cell = size / n;
+
+      for (let y = 0; y < n; y++) {
+        const row = grid[y];
+        for (let x = 0; x < n; x++) {
+          const code = row[x] || ".";
+          drawCell(x, y, cell, code);
+        }
+      }
+
+      // 极淡的网格线，保留像素风但避免糊成一片
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255,255,255,0.035)";
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= n; i++) {
+        const p = Math.round(i * cell) + 0.5;
+        ctx.moveTo(p, 0); ctx.lineTo(p, size);
+        ctx.moveTo(0, p); ctx.lineTo(size, p);
+      }
+      ctx.stroke();
+
+      drawPlayer(n, cell);
+    }
+
+    function drawCell(x, y, cell, code) {
+      const px = Math.floor(x * cell);
+      const py = Math.floor(y * cell);
+      const w = Math.ceil(cell) + 1;
+      const h = Math.ceil(cell) + 1;
+
+      if (code === ".") {
+        ctx.fillStyle = TILE_COLORS["."];
+        ctx.fillRect(px, py, w, h);
+        return;
+      }
+
+      ctx.fillStyle = TILE_COLORS[code] || "#334155";
+      ctx.fillRect(px, py, w, h);
+
+      // 像素风细节：不改变主色，只在内部叠一个暗/亮点
+      if (code === "D") {
+        ctx.fillStyle = "rgba(0,0,0,.16)";
+        if ((x + y) % 3 === 0) ctx.fillRect(px + 2, py + 2, Math.max(1, cell * .22), Math.max(1, cell * .22));
+      } else if (code === "T") {
+        ctx.fillStyle = "rgba(255,255,255,.12)";
+        ctx.fillRect(px + cell * .18, py + cell * .18, Math.max(1, cell * .22), Math.max(1, cell * .22));
+        ctx.fillStyle = "rgba(0,0,0,.18)";
+        ctx.fillRect(px + cell * .58, py + cell * .52, Math.max(1, cell * .22), Math.max(1, cell * .22));
+      } else if (code === "S") {
+        ctx.fillStyle = "rgba(255,255,255,.12)";
+        if ((x * 3 + y) % 4 === 0) ctx.fillRect(px + 2, py + 2, Math.max(1, cell * .18), Math.max(1, cell * .18));
+      } else if (code === "M") {
+        ctx.fillStyle = "rgba(255,255,255,.20)";
+        ctx.fillRect(px + cell * .25, py + cell * .25, Math.max(1, cell * .18), Math.max(1, cell * .18));
+      } else if (code === "W") {
+        ctx.fillStyle = "rgba(0,0,0,.20)";
+        ctx.fillRect(px, py + cell * .58, w, Math.max(1, cell * .18));
+      } else if (code === "B") {
+        ctx.strokeStyle = "rgba(255,255,255,.08)";
+        ctx.strokeRect(px + 1, py + 1, Math.max(1, w - 2), Math.max(1, h - 2));
+      } else if (code === "P") {
+        ctx.fillStyle = "rgba(255,255,255,.22)";
+        ctx.fillRect(px + cell * .4, py + cell * .12, Math.max(1, cell * .16), Math.max(1, cell * .3));
+      } else if (code === "E") {
+        ctx.fillStyle = "#1f2937";
+        ctx.fillRect(px + cell * .26, py + cell * .34, Math.max(1, cell * .14), Math.max(1, cell * .14));
+        ctx.fillRect(px + cell * .58, py + cell * .34, Math.max(1, cell * .14), Math.max(1, cell * .14));
+      }
+    }
+
+    function drawEmptyMap(size) {
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = "#64748b";
+      ctx.font = "13px Consolas, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("等待地形数据…", size / 2, size / 2);
+    }
+
+    function drawPlayer(n, cell) {
+      const center = state.grid_center || [Math.floor(n / 2), Math.floor(n / 2)];
+      const cx = center[0];
+      const cy = center[1];
+
+      // 2x3 逻辑碰撞体：中心格 = 左列 / 中行
+      const bodyX = cx * cell;
+      const bodyY = (cy - 1) * cell;
+      const bodyW = 2 * cell;
+      const bodyH = 3 * cell;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 214, 64, 0.10)";
+      ctx.fillRect(bodyX, bodyY, bodyW, bodyH);
+      ctx.setLineDash([Math.max(3, cell * .22), Math.max(2, cell * .14)]);
+      ctx.strokeStyle = "rgba(255, 231, 120, 0.68)";
+      ctx.lineWidth = Math.max(1, cell * .08);
+      ctx.strokeRect(bodyX + 1, bodyY + 1, Math.max(1, bodyW - 2), Math.max(1, bodyH - 2));
+
+      // 中心格高亮
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(255, 240, 150, 0.26)";
+      ctx.fillRect(cx * cell, cy * cell, cell, cell);
+      ctx.strokeStyle = "#fff3a6";
+      ctx.lineWidth = Math.max(2, cell * .14);
+      ctx.strokeRect(
+        cx * cell + ctx.lineWidth / 2,
+        cy * cell + ctx.lineWidth / 2,
+        Math.max(1, cell - ctx.lineWidth),
+        Math.max(1, cell - ctx.lineWidth)
+      );
+
+      // 中心白点
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(cx * cell + cell / 2, cy * cell + cell / 2, Math.max(1.5, cell * .11), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ------------------------------------------------------------------
+    // 状态栏 / 日志
+    // ------------------------------------------------------------------
+    function renderStatus(data) {
+      const p = data.player || {};
+      $("statX").textContent = Number(p.x_tiles || 0).toFixed(2);
+      $("statY").textContent = Number(p.y_tiles || 0).toFixed(2);
+      $("playerTile").textContent = `tile (${p.tile_x ?? 0}, ${p.tile_y ?? 0})`;
+
+      const hp = Number(p.hp ?? 0);
+      const maxHp = Number(p.max_hp ?? 100) || 100;
+      $("hpText").textContent = `${hp} / ${maxHp}`;
+      $("hpBar").style.width = `${Math.max(0, Math.min(100, hp / maxHp * 100))}%`;
+      $("hpBar").classList.toggle("low", hp / maxHp < 0.3);
+
+      const tool = data.tool || {};
+      $("toolName").textContent = tool.name || "—";
+      $("toolSlot").textContent = tool.slot ? `[${tool.slot}]` : "—";
+      $("actionText").textContent = data.action || "Idle";
+      if (data.last_reply) $("lastReply").textContent = data.last_reply;
+
+      const radius = data.grid_radius ?? 10;
+      const n = data.grid ? data.grid.length : radius * 2 + 1;
+      $("gridMeta").textContent = `${n} × ${n} · 以玩家为中心 · 半径 ${radius}`;
+      $("busyBadge").textContent = data.busy ? "执行中…" : "待命";
+      $("busyBadge").classList.toggle("working", !!data.busy);
+      const ready = !!data.game_ready;
+      const armed = !!data.armed;
+      $("modeBadge").textContent = data.simulation_mode
+        ? "模拟模式"
+        : `真实模式 · ${ready ? "已连接" : "未连接"}`;
+      $("modeBadge").className = `pill ${data.simulation_mode ? "subtle" : (ready ? "live" : "offline")}`;
+      $("standbyBadge").textContent = armed ? "已接管" : "待命 · 等待首条指令";
+      $("standbyBadge").className = `pill ${armed ? "live" : "subtle"}`;
+      $("standbyText").textContent = armed ? "已接管" : "待命";
+      $("gameStateBadge").textContent = data.simulation_mode
+        ? "模拟模式"
+        : (ready ? "游戏已连接" : "未检测到游戏");
+      $("gameStateBadge").className = `pill ${ready || data.simulation_mode ? "online" : "offline"}`;
+      $("guideGameTitle").textContent = data.window?.title
+        ? `${data.window.title} · ${data.window.width}×${data.window.height}`
+        : (data.simulation_mode ? "假数据模式" : "等待 Terraria 窗口…");
+      $("guideGameError").textContent = data.game_error
+        || (ready ? "游戏已连接。请先进入世界，然后输入「去砍树」开始。" : "启动游戏并进入世界后，输入首条指令即可开始。");
+      const hideGuide = armed || guideDismissed;
+      $("guidePanel").classList.toggle("hidden", hideGuide);
+      $("simulationHint").textContent = data.simulation_mode
+        ? "假数据沙盒 · 不会操作真实游戏"
+        : (ready ? "ClrMD 坐标 · 前台键鼠 · 地形待校准" : "真实模式 · 游戏未就绪");
+    }
+
+    function renderLogs(logs) {
+      if (!Array.isArray(logs) || logs.length === 0) return;
+      const first = logs[0];
+      const last = logs[logs.length - 1];
+      const key = `${logs.length}|${first.time}|${first.message}|${last.time}|${last.message}`;
+      if (key === lastLogKey) return;
+      lastLogKey = key;
+
+      const list = $("logList");
+      const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+      list.innerHTML = "";
+      logs.forEach((entry) => {
+        const line = document.createElement("div");
+        line.className = `log-line ${entry.level || "info"}`;
+        const time = document.createElement("span");
+        time.className = "log-time";
+        time.textContent = entry.time || "";
+        const msg = document.createElement("span");
+        msg.className = "log-msg";
+        msg.textContent = entry.message || "";
+        line.append(time, msg);
+        list.appendChild(line);
+      });
+      if (nearBottom) list.scrollTop = list.scrollHeight;
+    }
+
+    function applyState(data) {
+      state = data;
+      renderStatus(data);
+      renderLogs(data.logs);
+      drawMap();
+      setConnection(true);
+    }
+
+    async function refreshState() {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const response = await fetch("/api/state", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        applyState(await response.json());
+      } catch (error) {
+        setConnection(false);
+      } finally {
+        refreshing = false;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 配置表单 / 首次遮罩
+    // ------------------------------------------------------------------
+    async function loadConfig() {
+      try {
+        const response = await fetch("/api/config", { cache: "no-store" });
+        const payload = await response.json();
+        if (!payload.ok) return;
+        config = payload.config;
+        fillConfigForm();
+        if (!config.deepseek_api_key_set && !localDemo) showOverlay();
+      } catch (error) {
+        console.error("加载配置失败", error);
+      }
+    }
+
+    function fillConfigForm() {
+      if (!config) return;
+      $("apiKey").value = "";
+      $("apiKey").placeholder = config.deepseek_api_key_set
+        ? `已保存 ${config.deepseek_api_key_hint || ""}，留空保持不变`
+        : "sk-...";
+      $("keyHint").textContent = config.deepseek_api_key_set
+        ? `已保存：${config.deepseek_api_key_hint || "••••"}`
+        : "尚未配置";
+      $("windowTitle").value = config.window_title || "Terraria";
+      $("moveSpeed").value = config.move_speed ?? 1.0;
+      $("gridRadius").value = config.grid_radius ?? 10;
+      updateRangeLabels();
+    }
+
+    function updateRangeLabels() {
+      $("moveSpeedValue").textContent = `${Number($("moveSpeed").value).toFixed(1)}×`;
+      const radius = Number($("gridRadius").value);
+      $("gridRadiusValue").textContent = `${radius * 2 + 1} × ${radius * 2 + 1}`;
+    }
+
+    function configPayload() {
+      const payload = {
+        window_title: $("windowTitle").value.trim(),
+        move_speed: Number($("moveSpeed").value),
+        grid_radius: Number($("gridRadius").value)
+      };
+      const key = $("apiKey").value.trim();
+      if (key) payload.deepseek_api_key = key;
+      return payload;
+    }
+
+    async function saveConfig(event) {
+      event?.preventDefault();
+      const errorEl = $("configError");
+      errorEl.textContent = "";
+      $("saveConfigBtn").disabled = true;
+      try {
+        const response = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(configPayload())
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          const fields = payload.fields || {};
+          errorEl.textContent = Object.values(fields)[0] || payload.error || "保存失败";
+          return;
+        }
+        config = payload.config;
+        fillConfigForm();
+        if (config.deepseek_api_key_set) hideOverlay();
+        toast("配置已保存并热重载", "success");
+        refreshState();
+      } catch (error) {
+        errorEl.textContent = "网络错误，配置未保存";
+      } finally {
+        $("saveConfigBtn").disabled = false;
+      }
+    }
+
+    async function saveOnboarding() {
+      const key = $("onboardingKey").value.trim();
+      const errorEl = $("onboardingError");
+      errorEl.textContent = "";
+      if (!key) {
+        errorEl.textContent = "请先填写 API Key，或点击下方本地演示";
+        return;
+      }
+      $("onboardingSave").disabled = true;
+      try {
+        const response = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deepseek_api_key: key })
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          errorEl.textContent = payload.error || "保存失败";
+          return;
+        }
+        config = payload.config;
+        fillConfigForm();
+        hideOverlay();
+        toast("API Key 已保存，开始使用", "success");
+        refreshState();
+      } catch (error) {
+        errorEl.textContent = "网络错误，请重试";
+      } finally {
+        $("onboardingSave").disabled = false;
+      }
+    }
+
+    async function clearApiKey() {
+      if (!confirm("确定清除已保存的 API Key 吗？")) return;
+      try {
+        const response = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clear_api_key: true })
+        });
+        const payload = await response.json();
+        if (!response.ok) return toast(payload.error || "清除失败", "error");
+        config = payload.config;
+        fillConfigForm();
+        showOverlay();
+        toast("API Key 已清除", "warning");
+      } catch (error) {
+        toast("网络错误", "error");
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 指令
+    // ------------------------------------------------------------------
+    async function sendCommand(command) {
+      const text = String(command || "").trim();
+      if (!text) return;
+      try {
+        const response = await fetch("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: text })
+        });
+        const payload = await response.json();
+        if (response.status === 428) {
+          showOverlay();
+          toast("请先配置 API Key，或使用本地指令", "warning");
+          return;
+        }
+        if (response.status === 503) {
+          guideDismissed = false;
+          $("guidePanel").classList.remove("hidden");
+          toast(payload.error || "游戏窗口未就绪，请先启动游戏并进入世界", "warning");
+          return;
+        }
+        if (!response.ok) {
+          toast(payload.error || "指令发送失败", "error");
+          return;
+        }
+        $("commandInput").value = "";
+        const spoken = payload.reply || payload.intent?.reply;
+        toast(spoken || payload.message || "指令已接收", "success");
+        setTimeout(refreshState, 120);
+      } catch (error) {
+        toast("网络错误，指令未发送", "error");
+      }
+    }
+
+    async function stopAgent() {
+      try {
+        await fetch("/api/stop", { method: "POST" });
+        toast("已发送停止指令", "warning");
+        refreshState();
+      } catch (error) {
+        toast("停止失败", "error");
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 事件绑定
+    // ------------------------------------------------------------------
+    $("configForm").addEventListener("submit", saveConfig);
+    $("moveSpeed").addEventListener("input", updateRangeLabels);
+    $("gridRadius").addEventListener("input", updateRangeLabels);
+    $("toggleKey").addEventListener("click", () => {
+      const input = $("apiKey");
+      input.type = input.type === "password" ? "text" : "password";
+    });
+    $("toggleOnboardingKey").addEventListener("click", () => {
+      const input = $("onboardingKey");
+      input.type = input.type === "password" ? "text" : "password";
+    });
+    $("openSettings").addEventListener("click", openDrawer);
+    $("closeSettings").addEventListener("click", closeDrawer);
+    $("clearKeyBtn").addEventListener("click", clearApiKey);
+
+    $("openGuideBtn").addEventListener("click", () => {
+      guideDismissed = false;
+      $("guidePanel").classList.remove("hidden");
+    });
+    $("closeGuideBtn").addEventListener("click", () => {
+      guideDismissed = true;
+      $("guidePanel").classList.add("hidden");
+    });
+    $("launchGameBtn").addEventListener("click", async () => {
+      $("launchGameBtn").disabled = true;
+      try {
+        const response = await fetch("/api/game/launch", { method: "POST" });
+        const payload = await response.json();
+        toast(payload.message || (payload.ok ? "游戏已启动" : "启动失败"), payload.ok ? "success" : "error");
+        setTimeout(refreshState, 800);
+      } catch (error) {
+        toast("启动游戏请求失败", "error");
+      } finally {
+        $("launchGameBtn").disabled = false;
+      }
+    });
+
+    function refreshPreview() {
+      const img = $("gamePreview");
+      if (!img) return;
+      const next = new Image();
+      next.onload = () => {
+        img.src = next.src;
+        img.style.opacity = "1";
+      };
+      next.onerror = () => {
+        img.style.opacity = "0.18";
+      };
+      next.src = `/api/frame?t=${Date.now()}`;
+    }
+    $("onboardingSave").addEventListener("click", saveOnboarding);
+    $("localDemoBtn").addEventListener("click", () => {
+      localDemo = true;
+      hideOverlay();
+      toast("已进入本地演示模式：砍树/移动/跳跃/停止可用", "info");
+    });
+
+    $("aiChatForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const text = $("aiChatInput").value.trim();
+      if (!text) return;
+      sendCommand("AI规划 " + text);
+      $("aiChatInput").value = "";
+    });
+
+    $("commandForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendCommand($("commandInput").value);
+    });
+    document.querySelectorAll(".quick").forEach((button) => {
+      button.addEventListener("click", () => sendCommand(button.dataset.command));
+    });
+    $("stopBtn").addEventListener("click", stopAgent);
+    $("clearLogBtn").addEventListener("click", () => {
+      $("logList").innerHTML = "";
+      lastLogKey = "";
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+    if (window.ResizeObserver) {
+      new ResizeObserver(resizeCanvas).observe(document.querySelector(".canvas-shell"));
+    }
+
+    // ------------------------------------------------------------------
+    // 启动
+    // ------------------------------------------------------------------
+    async function boot() {
+      await loadConfig();
+      await refreshState();
+      resizeCanvas();
+      setInterval(refreshState, 700);
+      setInterval(refreshPreview, 2500);
+      setTimeout(refreshPreview, 500);
+    }
+
+    boot();
+  })();
+  </script>
+</body>
+</html>

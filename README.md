@@ -5,7 +5,9 @@
 
 ## 这是什么？
 
-这是一个 **Coopanion（CoO）桌面宠物的「世界（World）插件」**，扩展 ID 是 `cortico-world-terraria`。
+这是一个 **[Coopanion](https://github.com/Pal-AI-Lab/Coopanion)（CoO）桌面宠物的「世界（World）插件」**，扩展 ID 是 `cortico-world-terraria`。
+> Coopanion 是一个用 Cortico 构建的小型 AI 桌面宠物，有自己的大模型、人格、语音和形象包；
+> 本项目是它的**非官方**泰拉瑞亚世界插件。
 
 装上之后，你的桌宠可以「进入」官方泰拉瑞亚 1.4.4：
 
@@ -13,6 +15,20 @@
 - 这个插件负责把游戏「翻译」成桌宠能用的 **26 个原子动作**（看状态、走路、挖矿、放方块、打怪……）；
 - 本机的 Python 服务负责「眼睛和手」：只读游戏内存 + 模拟键盘鼠标；
 - 不修改任何游戏文件，不是外挂，是单机自娱自乐的学习项目。
+
+## 关于 Coopanion（桌宠本体）
+
+本项目是 **[Coopanion](https://github.com/Pal-AI-Lab/Coopanion)** 的一个**非官方世界插件**。
+
+Coopanion 是一个用 [Cortico](https://github.com/Pal-AI-Lab/Coopanion) 构建的**小型 AI 桌面宠物**：
+
+- 有自己的大模型人格、语音、形象包（figure）和工具系统；
+- 支持「世界（World）」插件：装上世界插件后，桌宠就可以「进入」某个应用（比如游戏），
+  用她/他自己的模型调用插件提供的工具；
+- 本项目 `cortico-world-terraria` 就是这样一个世界插件，让桌宠能玩官方泰拉瑞亚 1.4.4。
+
+> 桌宠本体的下载、安装、形象包都在官方仓库：<https://github.com/Pal-AI-Lab/Coopanion>。
+> 本项目只负责「泰拉瑞亚世界」这一块；遇到桌宠本身的问题请去官方仓库反馈。
 
 ## 为什么是桌宠插件，而不是独立程序？
 
